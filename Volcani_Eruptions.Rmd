@@ -1,0 +1,1038 @@
+---
+title: "IE6200 FINAL PROJECT"
+output:
+  pdf_document: 
+    toc: true 
+    toc_depth: 3  
+    number_sections: false  
+    highlight: tango
+  html_document: default
+  fig_caption: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+options(warn=-1)
+```
+
+
+
+```{r echo=FALSE}
+library(ggplot2)
+library(lattice)
+library(readxl)
+```
+
+\newpage
+# INTRODUCTION
+
+\
+
+Our planet earth has harbored life for over 4 million years. Earth is special compared to other planets, due to its various features of planetary habitability. But even in such a life-sustaining place as the Earth, natural hazards can happen. One such natural hazard is the volcanoes. The study of volcanoes is significant, as it helps us evaluate risks for eruptions and identifying zones that are prone to risks, thus enabling us to take prior evacuation steps before a volcano near our vicinity reaches its eruption stage.
+
+I have chosen the topic of volcanic eruptions for my statistical analysis. This analysis is based on the information provided in a dataset named 'Volcanic Eruptions in the Holocene Period' from Kaggle. The dataset provides ample information about volcanoes across the world, such as the geographical location, topography, features of the volcanoes, past activity details of those volcanoes. This analysis questions the connection between various geological factors and the eruption of volcanoes. Also, this analysis highlights and compares the statistics of important volcanic regions across the world.
+
+As there are multiple continuous and categorical variables present in the dataset, this analysis incorporates five different types of statistical tests for answering various questions regarding volcanic eruptions. The five different types of statistical tests are chi-square test, one-sample tests such as the t-test and the test of proportions and two-sample tests such as t-test for difference in means and test for difference in proportions
+
+ In this dataset, stratified sampling is used as a sampling strategy. In this type of sampling, the population is divided into groups or strata, based on some characteristic. Then, within each stratum, a probability sample is selected. In stratified sampling, the groups are called strata.
+In this dataset, the population of volcanoes is grouped based on its type. Then volcanoes are further chosen from various groups based on their activity evidence and grouped based on the geographical location.
+
+The study is of interest to me, as I being a graduate student studying in the Seattle campus of Northeastern University is interested in knowing the good features as well as the hazards in the State that I currently reside in, especially since, Washington State is home to five active volcanoes in the Cascade Range, east of Seattle.
+
+As most of the fields in the dataset are actual recorded data, it can be considered as a reliable source. But even then,  as in every other dataset, bias is inevitable. As some data pertains to historical information, chances of occurrence of bias cannot be neglected. As we cannot rely on the accuracy of the information documented hundreds of years ago, we can say that there can be some bias in the data about historical information.
+
+\newpage
+# EXPLORATORY DATA ANALYSIS
+
+```{r LoadPackages, include=FALSE}
+library(lattice)
+library(ggplot2)
+library(readxl)
+```
+
+```{r include=FALSE}
+Dataset_Finals <- read.csv("database.csv")
+summary(Dataset_Finals)
+```
+
+\vspace{1cm}
+
+
+The below graph shows the count of volcanic activity by regions:
+
+\vspace{1cm}
+
+```{r}
+volcanic_region <- data.frame(table(Dataset_Finals$Region))
+names(volcanic_region) <-  c("Region", "Freq")
+
+volcanic_region$Region <-
+  factor(volcanic_region$Region, levels = rev(levels(volcanic_region$Region)))
+
+ggplot(volcanic_region, aes(Region, Freq, fill = Region)) +
+  ggtitle("Volcanic Events by Region") +
+  coord_flip() +
+  geom_bar(stat = "identity", width = 0.90) +
+  xlab("") + # Set axis labels
+  ylab("") +
+  geom_text(aes(x = Region, label = Freq, hjust = 1.5)) +
+  guides(fill = FALSE) +
+  theme_minimal()
+```
+  
+  
+  
+\vspace{2cm}
+
+```{r}
+erupdated<-sum(Dataset_Finals$Activity.Evidence== "Eruption Dated")
+erupobs<-sum(Dataset_Finals$Activity.Evidence== "Eruption Observed")
+evdcerd<-sum(Dataset_Finals$Activity.Evidence== "Evidence Credible")
+evdunc<-sum(Dataset_Finals$Activity.Evidence== "Evidence Uncertain")
+unrestplei<-sum(Dataset_Finals$Activity.Evidence=="Unrest / Pleistocene")
+unresthol<-sum(Dataset_Finals$Activity.Evidence=="Unrest / Holocene")
+```
+
+\vspace{2cm}
+
+```{r}
+slices<-c(erupdated,erupobs,evdcerd,evdunc,unresthol,unrestplei)
+
+slices_labels <- round(slices/sum(slices) * 100, 1)
+
+# Concatenate a '%' char after each value
+slices_labels <- paste(slices_labels, "%", sep="")
+
+# Create a pie chart with defined heading and custom colors and labels
+colors <- c("yellow2","olivedrab3","orangered3","blue","hotpink","green")
+pie(slices, main="Distribution of Activity Evidence", col=colors, labels=slices_labels, cex=0.7)
+legend(1.1, .5, 
+c('Unrest / Pleistocene','Eruption Dated','Eruption Observed','Evidence Credible','Evidence Uncertain','Unrest / Holecene'), 
+cex = 0.6, fill = colors,"topright")
+```
+
+\vspace{1cm}
+
+The graph below represents the elevations of Stratovolcanoes:
+
+\vspace{1cm}
+
+```{r}
+dataset_one_sample <- split(Dataset_Finals$Elevation..Meters.,Dataset_Finals$Type)
+strato <- dataset_one_sample$`Stratovolcano`
+stratoes <- dataset_one_sample$`Stratovolcano(es)`
+stratovolcano <- rbind(strato,stratoes)
+barplot(stratovolcano,main="Elevation of Stratovolcanoes",xlab="Stratovolcanoes",
+        ylab="Elevation (in meters)",col="green",border=NA)
+```
+
+
+\vspace{1cm}
+
+```{r}
+dataset <- split(Dataset_Finals$`Elevation`,Dataset_Finals$Country)
+barplot(dataset$`United States`,main="Elevation of volcanic eruptions in the United States",
+        xlab="Volcanic eruptions in the United States",ylab="Elevation (in meters)",col="green")
+```
+
+
+\vspace{1cm}
+
+```{r echo=FALSE}
+dataset <- split(Dataset_Finals$Elevation..Meters.,Dataset_Finals$Country)
+barplot(dataset$`Russia`,main="Elevation of volcanic eruptions in Russia", 
+        xlab="Volcani eruptionss in Russia", ylab="Elevation (in meters)", col="blue")
+```
+
+
+\vspace{1cm}
+
+```{r}
+dataset <- split(Dataset_Finals$Elevation..Meters.,Dataset_Finals$Country)
+US <- dataset$`United States`
+Russia <- dataset$Russia
+
+# creating Data frame for barplot
+df = rbind(Dataset_Finals$Elevation..Meters.[Dataset_Finals$Country== "United States"]
+           ,Dataset_Finals$Elevation..Meters.[Dataset_Finals$Country== "Russia"])
+barplot(df,ylab="Total Elevation",ylim=c(0,10000)
+        ,col=c("blue","green")
+        ,xlab="US and Russia")
+legend("topleft",legend=c("Total elevation for US","Total elevation for Russia"),
+       fill=c("green","blue"))
+```
+
+```{r}
+boxplot(US, at=1, xlim=c(0, 3),main="Elevation of volcanoes in US and Russia",
+xlab="Volcanoes in US and Russia",
+ylab="Elevation in meters",col="gold",border="brown")
+boxplot(Russia, at=2, add=TRUE, col="green")
+
+legend("topleft"
+       ,legend=c("US"
+                 ,"Russia")
+       ,fill=c("gold","green"))
+```
+
+The above figure shows the presence of outliers in the elevation of volcanic eruptions in Russia and the United States.
+
+\vspace{1cm}
+
+```{r fig.height=5}
+# qq norm plots for volcanoes in US and Russia
+qqnorm(US,main="For volcanoes in US", col="red")
+```
+
+```{r}
+qqnorm(Russia, main="For volcanoes in Russia", col="blue")
+```   
+
+
+
+\newpage
+# STATISTICAL ANALYSIS
+
+## Question 1:
+
+Is the mean elevation of stratovolcanoes all over the world different than 2500 meters?
+
+### Traditional Statistical Tools
+ 
+One sample T-test is used as our statistical test since we need to compare whether the  mean elevation of stratovolcanoes is different than a mean elevation of 2500 meters or not, in order to solve this question. 
+
+#### The population parameter: 
+The population parameter we want to make inference is the true population mean elevation of the stratovolcanoes.
+$\mu$
+
+#### Null hypothesis:
+$H_0 : \mu=2500$meters
+      
+  The true mean elevation of stratovolcanoes is 2500 meters.
+
+#### Alternative hypothesis: 
+
+$H_a: \mu \neq 2500$meters
+
+  The true mean elevation of stratovolcanoes is different than 2500 meters.
+
+#### Sample statistic: 
+
+The sample statistic is the sample mean elevation of stratovolcanoes $\bar x$
+
+
+#### Test Statistic:
+
+Here, the population variance is not known and hence we have to estimate it with the sample mean. Thereference
+distribution of our test statistic shifts to a t-distribution. The shape of a t-distribution depends on the sample size. As n appraoches infinity the t-distribution appraoches the normal distribution.
+
+
+#### Distribution of the test statistic:
+
+$$t_{n-1} = \frac{\bar{x}- \mu_0}{ \sqrt{\frac{s}{n}}} \sim t_{n-1}$$
+
+#### Statistical Methodology:
+
+First step is to find the sample mean and sample standard deviation to conduct t-test. Then, p-value and confidence intervals are calculated and sanity check is conducted to verify whether the calculated results match with the values returned by the R built-in function.
+
+
+```{r}
+# Rows containing Type='Stratovolcano' and Type='Stratovolcanoes' are binded together
+dataset_one_sample <- split(Dataset_Finals$Elevation..Meters.,Dataset_Finals$Type)
+strato <- dataset_one_sample$`Stratovolcano`
+stratoes <- dataset_one_sample$`Stratovolcano(es)`
+stratovolcano <- rbind(strato,stratoes)
+
+# sample mean
+x_bar <- mean(stratovolcano)
+
+# null hypothesized population mean
+mu_0 <- 2500
+
+# sample standard deviation
+s <- sd(stratovolcano)
+
+# sample size
+n <- length(stratovolcano)
+
+# t-test test statistic
+t <- (x_bar - mu_0)/(s/sqrt(n))
+
+# two-sided p-value so multiply by 2
+two_sided_t_pval <- 2*pt(abs(t),df=n-1,lower=FALSE)
+
+# Confidence interval(95% confidence level)
+
+# lower bound
+lb<-x_bar+(qt(0.025, n-1)*(s/sqrt(n)))
+
+# upper bound
+ub<-x_bar+(qt(0.975, n-1)*(s/sqrt(n)))
+```
+
+##### Statistics:
+
+Test: One sample T-Test 
+
+Sample Mean : 2292.82
+
+Sample Standard Deviation : 1589.341
+
+Sample size : 1194
+
+t : -4.504359
+
+p : 7.31e-06
+
+Confidence Interval: [2202.579 2383.061]
+
+
+#### Sanity Check with R built-in function:
+
+```{r}
+# Sanity check with R built-in function
+t.test(stratovolcano,alternative = "two.sided",mu = 2500)
+```
+
+#### Interpretation:
+
+There is strong evidence (p-value=.00000731) to suggest that the true mean elevation of stratovolcanoes is different than 2500 meters. We reject the null hypothesis that true mean elevation of stratovolcanoes is 2500 meters. With 95% confidence, it can be said that the true mean elevation is between 2202.579 meters and 2383.061
+
+```{r}
+# qq norm plots for stratovolcanoes
+qqnorm(stratovolcano,main="Elevations of stratovolcanoes", col="red")
+```
+
+
+\newpage
+
+### Bootstrap Method
+
+\vspace{1cm}
+
+```{r}
+num_sims <- 10000
+
+# A vector to store results
+results <- rep(NA, num_sims)
+
+set.seed(0)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+results[i] <- mean(sample(x = stratovolcano,
+size = n,
+replace = TRUE))
+}
+
+# plot results
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Mean', 
+     xlab = 'Average elevation', ylab = 'Density')
+
+# estimatating a normal curve over it 
+lines(x = seq(2000, 4000, 0.05), dnorm(seq(2000, 4000, 0.05),
+      mean = x_bar, sd = s/sqrt(540)), col="red")
+```
+
+
+The p-value is the probability that we observe a test statistic as or more unusual than the one we observed, given that the null hypothesis is true. If the null hypothesis is true, then the true mean elevation time is 2500 meters. We need to shift our distribution so that this is true.
+
+```{r}
+# Shift the sample so that the null hypothesis is true
+avg_H0_true <- stratovolcano - x_bar + mu_0
+
+set.seed(0)
+
+# Simulations
+num_sims <- 10000
+
+# A vector to store  results
+results_H0_true <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+results_H0_true[i] <- mean(sample(x = avg_H0_true,size = n,replace = TRUE))
+}
+
+
+# plot results
+hist(results_H0_true, freq=FALSE, main="Histogram at null hypothesis", xlab ='Average Elevation', ylab = 'Density')
+
+
+# adding line to show values more extreme on lower end
+low_end_extreme <- mean(results_H0_true)+(mean(results_H0_true)-x_bar)
+abline(v= c(mean(stratovolcano),low_end_extreme), col=c("blue","green"))
+```
+
+
+```{r}
+# counts of values more extreme than the test statistic in our original sample, given H0 is true
+# two sided given the alternate hypothesis
+count_lower_tail <- sum(results_H0_true <= low_end_extreme)
+count_upper_tail <- sum(results_H0_true >= x_bar)
+bootstrap_pvalue <- (count_lower_tail + count_upper_tail)/num_sims
+
+# bootstrap confidence interval
+# need the standard error which is the standard deviation of the results
+bootstrap_SE_X_bar <- sd(results)
+# an estimate is to use the formula statistic +/- 2*SE
+lb_bootstrap<-x_bar - 2*bootstrap_SE_X_bar
+
+ub_bootstrap<-x_bar + 2*bootstrap_SE_X_bar
+
+#p-value
+two_sided_t_pval
+```
+
+
+#### Statistics :
+
+p : 0.00000731
+
+Confidence interval : [2200.801,2384.839]
+
+#### Interpretation :
+
+The p-value and confidence intervals calculated using both traditional t-test and bootstrap method yield the same results. In this case, the traditional t-tools were making our results a bit more significant and our confidence intervals narrower than what we found using the empirical method.
+
+\newpage
+## Question 2: 
+
+Does 50% of volcanic eruptions observed around the world occur in South America?
+ 
+### Traditional Statistical Tools
+
+We prepare to use one sample test of propotions as our statistical test.
+
+#### The population parameter: 
+The population parameter we want to make inference to is the population proportion of volcanic eruptions observed in South America. $\mu$
+
+#### Null hypothesis:
+$H_0 :p_0=0.5$
+
+  The true proportion of volcanic eruptions observed in South America is 50%
+
+#### Alternative hypothesis: 
+$H_a: p_R<0.5$
+
+  The true proportion of volcanic eruptions observed in South America is less than 50%
+
+#### Sample statistics: 
+The sample statistic is the sample propotion of volcanic eruptions observed in South America $$\hat p = \frac{70}{568}=0.123$$
+
+
+#### Test Statistics:
+We can use the normal approximation here as the sample size is greater than 30. One sample test of proportion is done as both np and n(1-p) is greater than 10
+
+
+#### Distribution of the test statistic:
+
+$$z = \frac{p-p_0}{ \sqrt{\frac{p_0(1-p_0)}{n}}}$$
+
+
+#### Statistical methodology: 
+First step is to find the z value. Then, p-value and confidence intervals are calculated and sanity check is conducted to verify whether the calculated results match with the values returned by the R built-in function.
+
+
+```{r}
+mydata_one_sample_prop <- Dataset_Finals[which(Dataset_Finals$Region=='South America' & Dataset_Finals$Activity.Evidence== 'Eruption Observed'), ]
+
+erup_south_america<-NROW(mydata_one_sample_prop)
+
+mydata_one_sample_prop1 <- Dataset_Finals[which(Dataset_Finals$Activity.Evidence== 'Eruption Observed'), ]
+
+erup_total <- NROW(mydata_one_sample_prop1)
+
+erup_south_america_prop <- erup_south_america/erup_total
+
+n<-erup_total
+p_obs<-0.5
+difference_prop <- erup_south_america_prop-p_obs
+q_obs<-1-p_obs
+
+z<-difference_prop/sqrt((p_obs*q_obs)/100)
+
+# One sided lower normal ppproximation
+p <- pnorm(z, lower.tail = TRUE)
+# Confidence interval
+
+# upper bound
+alpha = 0.05
+z1 = qnorm(alpha/2, lower.tail=F)
+ub<-c(erup_south_america_prop + z1*sqrt(((erup_south_america_prop)*(1-erup_south_america_prop))/n))
+```
+
+#### Statistics :
+
+z : -17.95848
+
+p : 2.059632e-14
+
+Confidence interval : [0,0.1502721]
+
+#### Sanity check using R built-in function:
+
+```{r}
+prop.test(x = erup_south_america, n = erup_total, p = 0.5, correct = FALSE,
+           alternative = "less")
+```
+
+```{r}
+binom.test(x=70, n = 568, p=(.5), alternative="less")
+```
+
+#### Interpretation:
+
+Using both the exact binomial test as well as the normal approximation for a one-sample test of proportion we got  p-value<2.2e-16(Without using R function p= 2.2e-14) .There is strong evidence (p-value<2.2e-16) to reject the null hypothesis that the true proportion of eruptions observed in South America is equal to 50% of the total eruptions across the world. There is enough evidence to show that the true proportion of eruptions observed in South America is lesser than 50% of the total eruptions across the world. Therefore, with 95% confidence, the true proportion of eruptions observed in South America is between 0 and 0.1482766
+
+\newpage
+
+### Bootstrap Method
+
+\vspace{1cm}
+
+```{r}
+south_america <- rep(c(1,0), c(70, 568-70))
+```
+
+```{r}
+num_sims <- 10000
+
+# A vector to store my results
+results <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims)
+{
+results[i] <- mean(sample(x = south_america,size = 568,replace = TRUE))
+}
+
+# Finally plot the results
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Mean, Given Null Hypothesis is True', xlab = 'Propotion of volcanic eruptions', ylab = 'Density')
+
+lines(x = seq(.01, .2, .001), dnorm(seq(.01, .2, .001), mean = mean(results), sd = sd(results)), col="red")
+```
+
+```{r}
+# Bootstrap confidence interval
+ub<-c(quantile(results, c(1)))
+
+# Under the assumption that the null hypothesis is true, we have 50% volcanoes from south america
+south_america <- rep(c(1, 0), c(70, 568-70))
+num_sims <- 10000
+# A vector to store my results
+results <- rep(NA, num_sims)
+# A loop for completing the simulation
+
+for(i in 1:num_sims){
+results[i] <- mean(sample(x = south_america,size = 568,replace = TRUE))
+}
+
+# Finally plot the results
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Proportion under H_0:p=0.5', xlab = 'Proportion of volcanoes in south america', ylab = 'Density')
+
+lines(x = seq(.01, 2.5, .001), dnorm(seq(.01, 2.5, .001), mean = mean(results), sd = sd(results)),col="red")
+abline(v=.123, col="blue")
+```
+
+```{r}
+count_of_more_extreme_upper_tail <- sum(results <= .123)
+bootstrap_pvalue <- count_of_more_extreme_upper_tail/num_sims
+```
+
+#### Interpretation: 
+The p-value obtained from bootstrapping is nearly similar to the p-value from the traditional statistical test. As, p-value is lesser than the significance level, we reject the null hypothesis that the true proportion of eruptions observed in South America is equal to 50% of the total eruptions across the world. There is enough evidence to show that the true proportion of eruptions observed in South America is lesser than 50% of the total eruptions across the world. Therefore, with 95% confidence, the true proportion of eruptions observed in South America is between 0 and 0.1482766
+
+\newpage
+
+## Question 3:
+
+Is the mean elevation of volcanic eruptions in Russia different than the mean elevation of volcanic eruptions in the United States?
+
+### Traditional Statistical Tools
+ 
+We prepare to use two sample T-test as our statistical test since we need to compare whether the  mean elevation of volcanic eruptions in Russia is equal to the mean elevation of volcanic eruptions in the United States or not, in order to solve our question. 
+
+#### The population parameter: 
+We are interested in the true population mean difference in the elevation of volcanic eruptions in Russia and the United States.
+$\mu_{r} - \mu_{us}$
+
+
+#### Null hypothesis: 
+$H_{o}:\mu_{r}=\mu_{us}\space or \space \mu_{r}-\mu_{us} =0$  
+
+The true population mean elevation of volcanic eruptions in Russia is equal to the true population mean elevation of volcanic eruptions in the United States
+
+#### Alternative hypothesis: 
+
+$H_{a}:\mu_{r} \neq \mu_{us}\space or \space \mu_{r}-\mu_{us} \neq 0$  
+
+The true population mean elevation of volcanic eruptions in Russia is not equal to the true population mean elevation of volcanic eruptions in the United States
+
+#### Sample statistics: 
+The sample mean difference in the elevation of volcanic eruptions in Russia and the United States $\bar x_{r} - \bar x_{us}$
+
+
+#### Test Statistics:
+
+$$t_{min(n_w-1,n_m-1)} = \frac{\bar{x_{w}}- \bar{{x_{m}}}}{ \sqrt{\frac{{s_m}^2}{n_m}+\frac{{s_w}^2}{n_w}}}$$
+
+#### Statistical methodology: 
+Two sample T-test is used when we have two independent samples from two populations. Here, we have two different samples: volcanic eruptions in Russia and volcanic eruptions in US
+
+We used the two sample T-test here since what we want to know from the question is that whether the difference between volcanic eruption elevation in US and Russia is too big or not. If the difference is too little and even does not exist, we can accept the null hypothesis. We could calculate the sample mean value and sample standard deviation here. Also, since we have divided the sample into two groups: US and Russia, we need to use two sample T-test to prove our hypothesis. 
+
+```{r}
+# the parts of the test statistic
+# sample means
+x_bar_us <- mean(US)
+x_bar_r <- mean(Russia)
+
+# null hypothesized population mean difference between the two groups
+mu_0 <- 0
+
+# sample variances
+s_us_sq <- sd(US)**2
+s_r_sq <- sd(Russia)**2
+
+
+# sample size
+n_us <- length(US)
+n_r <- length(Russia)
+
+
+# t-test test statistic
+t <- (x_bar_r - x_bar_us - mu_0)/sqrt((s_r_sq/n_r) + (s_us_sq/n_us))
+
+# p-value
+p <-pt(abs(t),df= min(n_r,n_us)-1,lower.tail=FALSE)*2
+
+#lower bound
+lb<-(x_bar_r-x_bar_us)+(qt(0.025, min(n_r, n_us)-1)*sqrt((s_r_sq/n_r) + (s_us_sq/n_us)))
+
+
+# upper bound
+ub<-(x_bar_r-x_bar_us)+(qt(0.975, min(n_r, n_us)-1)*sqrt((s_r_sq/n_r)+ (s_us_sq/n_us)))
+
+```
+
+#### Statistics:
+
+Sample mean elevation(Russia) : 1627.359
+
+Sample mean elevation(United States) : 1501.601
+
+Sample standard deviation(Russia) : 853213.9
+
+Sample standard deviation(United States) : 1578090
+
+Sample size(Russia) : 145
+
+Sample size(United States) : 173
+
+t : 1.026595
+
+p : 0.3063325
+
+Confidence interval : [-116.3721,367.887]
+
+#### Sanity check using R built-in function
+```{r}
+t.test(Russia,US)
+```
+
+
+#### Interpretation:
+
+Using the traditional methods, a p-value of 0.3063325 is obtained, which is greater than the significance level. Thus, there is no evidence to prove that the alternate hypothesis is true and thus we fail to reject the null hypothesis. There is enough evidence to show that the true population mean elevation of volcanic eruptions in Russia is equal to the true population mean elevation of volcanic eruptions in the United States. With 95% confidence, the true difference in the mean elevation of volcanic eruptions in Russia and the United States is between -115.2755 meters and 366.7904 meters
+
+\newpage
+
+### Bootstrap Method
+
+```{r}
+num_sims <- 10000
+
+# A vector to store results
+results <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+mean_US <- mean(sample(x = US,
+size = min(n_us,n_r),
+replace = TRUE))
+mean_Russia <- mean(sample(x = Russia,
+size = min(n_us,n_r),
+replace = TRUE))
+results[i] <- mean_Russia-mean_US
+}
+
+# plot results
+hist(results, freq = FALSE, main='Sampling Distribution of the Sample Mean', xlab = 'Average Difference in Elevation', ylab = 'Density')
+```
+
+
+```{r}
+cf<-c(quantile(results, c(.025, .975)))
+```
+
+
+```{r}
+num_sims <- 1000
+
+# A vector to store the results
+results_given_H0_true <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+shuffled_groups <- transform(Dataset_Finals, Country=sample(Country))
+mean_US <- mean(shuffled_groups$Elevation..Meters.[shuffled_groups$Country=="United States"])
+mean_Russia <- mean(shuffled_groups$Elevation..Meters.[shuffled_groups$Country=="Russia"])
+results_given_H0_true[i] <- mean_US - mean_Russia
+}
+
+# plot the results
+hist(results_given_H0_true, freq = FALSE,main='Dist. of the Diff in Sample Means Under Null',xlab = 'Average Elevation under Null',ylab = 'Density')
+diff_in_sample_means <- mean(US) - mean(Russia)
+abline(v=diff_in_sample_means, col = "blue")
+abline(v=abs(diff_in_sample_means), col = "red")
+```
+
+```{r}
+# two sided given the alternate hypothesis
+count_of_more_extreme_lower_tail <- sum(results_given_H0_true <= diff_in_sample_means)
+count_of_more_extreme_upper_tail <- sum(results_given_H0_true >= abs(diff_in_sample_means))
+bootstrap_pvalue <- (count_of_more_extreme_lower_tail + count_of_more_extreme_upper_tail)/num_sims
+```
+
+#### Interpretation: 
+The p-value obtained from bootstrapping is nearly similar to the p-value from traditional statistical test. The confidence level is slightly different due to the fact that in bootstrapping we are considering the minimum of two sample sizes. However, as the p-value is greater than the significance level, we fail to reject the null hypothesis that the true population mean elevation of volcanic eruptions in Russia is equal to the true population mean elevation of volcanic eruptions in the United States.
+
+\newpage
+
+## Question 4: 
+
+Is the proportion of number of eruptions observed in South America greater than that in Indonesia?
+
+### Traditional Statistical Tools
+ 
+The two sample test for difference in proportions is used as our statistical test since we need to compare whether the  proportion of number of observed volcanic eruptions in South America is equal to the proportion of number of observed volcanic eruptions in Indonesia or not, in order to answer our question. 
+
+#### The population parameter: 
+
+We are interested in the true population proportion difference between volcanic eruptions in South America and Indonesia  $p_s-p_i$
+
+#### Null hypothesis: 
+$H_{o}:p_s=p_i\space \ or \space p_s-p_i =0$  
+
+There is no difference between the true population proportion of number of volcanic eruptions in South America and Indonesia.
+
+#### Alternative hypothesis: 
+$H_{a}:p_s>p_i\space \ or \space p_s-p_i>0$
+
+The true population proportion of the number of volcanic eruptions in South America is greater than  true population proportion of the number of volcanic eruptions in Indonesia.
+
+#### Sample Statistics:
+$$\hat p_s-\hat p_i$$
+
+
+#### Test Statistics:
+$z=\frac{(\hat p_s - \hat p_i)-(p_s -p_i)}{\sqrt{\frac{\hat p_s(1-\hat p_s)}{n_s}+\frac{\hat p_i(1-\hat p_i)}{n_i}}}$
+
+#### Distribution of the test statistics:
+$z=\frac{(\hat p_s - \hat p_i)-(p_s -p_i)}{\sqrt{\frac{\hat p_s(1-\hat p_s)}{n_s}+\frac{\hat p_i(1-\hat p_i)}{n_i}}} \sim N(0,1)$
+
+#### Statistical methodology: 
+We used the two sample test for difference in proportion here since what we want to know from the question is that whether the difference between number of volcanic eruptions in South America and Indonesia is too big or not. If the difference is too little and even does not exist, we can accept the null hypothesis else, we fail to reject the null hypothesis.
+
+
+```{r}
+# the parts of the test statistic
+# sample props
+mydata_one_sample_prop2 <- Dataset_Finals$Activity.Evidence[which(Dataset_Finals$Region=='Indonesia' & Dataset_Finals$Activity.Evidence== 'Eruption Observed')]
+erup_indonesia<-NROW(mydata_one_sample_prop2)
+mydata_one_sample_prop3 <- Dataset_Finals$Activity.Evidence[which(Dataset_Finals$Region=='South America')]
+erup_south_america_total <-NROW(mydata_one_sample_prop3)
+mydata_one_sample_prop4 <- Dataset_Finals$Activity.Evidence[which(Dataset_Finals$Region=='Indonesia')]
+erup_indonesia_total <-NROW(mydata_one_sample_prop4)
+
+p_hat_s <- erup_south_america/erup_south_america_total
+p_hat_i <- erup_indonesia/erup_indonesia_total
+
+# null hypothesized population prop difference between the two groups
+p_0 <- 0
+
+# sample size
+n_s <- erup_south_america_total
+n_i <- erup_indonesia_total
+
+# sample variances
+var_s <- (p_hat_s*(1-p_hat_s))/n_s
+var_i <- (p_hat_i*(1-p_hat_i))/n_i
+
+# z-test test statistic
+z <- (p_hat_s - p_hat_i - p_0)/sqrt(var_s + var_i)
+
+# one sided p-value
+one_sided_diff_prop_pval <- pnorm(q = z, lower.tail = FALSE)
+
+# confidence interval
+#lower bound
+lb<-(p_hat_s - p_hat_i)+(qnorm(0.025)*sqrt(var_s + var_i))
+```
+
+#### Statistics:
+
+z : -3.731979
+
+p : 0.999905
+
+Confidence interval : [-0.3065737,1]
+
+#### Sanity check using R built-in function
+
+```{r}
+prop.test(x = c(erup_south_america,erup_indonesia ), n = c(erup_south_america_total, erup_indonesia_total),
+              alternative = "greater")
+```
+
+
+#### Interpretation:
+
+There is no evidence (p-value = 0.9998) to suggest that the true population proportion of the number of volcanic eruptions in South America is greater than  true population proportion of the number of volcanic eruptions in Indonesia. We fail to reject the null hypothesis that the true population proportion of the number of volcanic eruptions in South America is equal to the true population proportion of the number of volcanic eruptions in Indonesia. With 95% confidence the true population proportion difference is between  -0.3 and 1 
+
+
+\newpage
+
+
+### Bootstrap Method
+
+```{r}
+rep_sa <- rep(c(1, 0), c(erup_south_america, n_s - erup_south_america))
+rep_indo <- rep(c(1,0), c(erup_indonesia, n_i - erup_indonesia))
+num_sims <- 10000
+
+# A vector to store the results
+results <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+prop_sa <- mean(sample(rep_sa,
+size = n_s,
+replace = TRUE))
+prop_indo <- mean(sample(rep_indo,
+size = n_i,
+replace = TRUE))
+results[i] <- prop_sa - prop_indo
+}
+
+# plot results
+hist(results, freq = FALSE, main='Dist. of the Diff in Prop', xlab = 'Difference in Prop. of volcanic eruptions', ylab = 'Density')
+
+cf<-c(quantile(results, c(.025)))
+```
+
+#### Randomization distribution
+
+```{r}
+df_combined <- data.frame("eruption" = c(rep_sa, rep_indo),"number" = rep(c("sa", "indo"), c(n_s, n_i)))
+```
+
+```{r}
+m1<-mean(df_combined$eruption[df_combined$number=="sa"]) == p_hat_s
+m2<-mean(df_combined$eruption[df_combined$number=="indo"]) == p_hat_i
+num_sims <- 1000
+
+# A vector to store  results
+results_H0_true <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+shuffled_groups <- transform(df_combined, number=sample(number))
+prop_sa <- mean(shuffled_groups$eruption[shuffled_groups$number=="sa"
+])
+prop_indo <- mean(shuffled_groups$eruption[shuffled_groups$number=="indo"])
+results_H0_true[i] <- prop_sa - prop_indo
+}
+
+# plot results
+
+hist(results_H0_true, freq = FALSE,main='Dist. of the Diff in Sample Sample Props Under Null',xlab = 'Average Difference in Prop. of Eruptions under Null',ylab = 'Density')
+
+diff_in_sample_props <- p_hat_s - p_hat_i
+abline(v=diff_in_sample_props, col = "blue")
+abline(v=-diff_in_sample_props, col = "red")
+
+# two sided given the alternate hypothesis
+count_of_more_extreme_upper_tail <- sum(results_H0_true >= diff_in_sample_props)
+bootstrap_pvalue <- (count_of_more_extreme_lower_tail )/num_sims
+```
+
+#### Interpretation: 
+The p-value obtained from bootstrapping is different from the p-value from traditional statistical test. But this might be due to the large number of simulations done in bootstrapping. As p-value is greater than the significance level in both the methods, for significance level=0.05 we fail to reject the null hypothesis that the true population mean elevation of volcanic eruptions in Russia is equal to the true population mean elevation of volcanic eruptions in the United States.The null hypothesized difference of 0 is in the confidence interval which agrees with our failure to reject the null hypothesis.
+
+\newpage
+
+## Question 5: 
+
+Is is likely that the total number of eruptions observed in the Rift Zone / Continental Crust (>25 km), Intraplate / Continental Crust (>25 km), Subduction Zone / Continental Crust (>25 km) and others the same ?
+
+### Traditional Statistical Tools
+
+The Chi-square Goodness of Fit Test is used as our statistical test since we are considering a single categorical variable with more than 2 categories and the expected count of each category is at least 5. Here, as the categorical variable contains 12 categories, except for Rift Zone / Continental Crust (>25 km), Intraplate / Continental Crust (>25 km) and Subduction Zone / Continental Crust (>25 km), all the other tectonic settings are considered as 'others'.
+
+#### The population parameter: 
+We are interested in the true population proportion of the total number of eruptions observed in the Rift Zone / Continental Crust (>25 km), Intraplate / Continental Crust (>25 km),Subduction Zone / Continental Crust (>25 km) and others $ p_R, p_I,p_O,p_S$
+
+#### Null hypothesis: 
+$H_{o}:p_R=p_I=p_S=p_O$  
+
+The proption of number of eruptions observed in each choice is the same and is equal to 0.25
+
+#### Alternative hypothesis: 
+$H_{a}:Some \ p_i \neq 0.25$
+
+Atleast one of the propotions is not equal to 0.25
+
+#### Sample Statistics:
+The sample proportion of the total number of eruptions observed in the Rift Zone / Continental Crust (>25 km), Intraplate / Continental Crust (>25 km),Subduction Zone / Continental Crust (>25 km) and others
+$$ \hat p_R, \hat p_I, \hat p_O, \hat p_S $$
+
+
+#### Test Statistics and Distribution:
+$\chi^2=\sum_{i=1}^k\frac{(O_i-E)^2}{E} \sim \chi_{k-1}^2$
+
+#### Statistical methodology: 
+We used the Chi-square goodness of fit test here since what we want to know at least one of the
+proportions is significantly different than 0.25. If there is no difference, we fail to reject the null hypothesis.
+
+
+```{r}
+# the parts of the test statistic
+# sample props
+mydata_chi1 <- Dataset_Finals$Activity.Evidence[which(Dataset_Finals$Tectonic.Setting=='Rift Zone / Continental Crust (>25 km)' & Dataset_Finals$Activity.Evidence== 'Eruption Observed')]
+erup_rift<-NROW(mydata_chi1)
+
+mydata_chi2 <- Dataset_Finals$Activity.Evidence[which(Dataset_Finals$Tectonic.Setting=='Intraplate / Continental Crust (>25 km)'& Dataset_Finals$Activity.Evidence== 'Eruption Observed')]
+erup_intraplate <-NROW(mydata_chi2)
+
+mydata_chi3 <- Dataset_Finals$Activity.Evidence[which(Dataset_Finals$Tectonic.Setting=='Subduction Zone / Continental Crust' & Dataset_Finals$Activity.Evidence== 'Eruption Observed')]
+erup_subduction <-NROW(mydata_chi3)
+
+mydata_chi_total <- Dataset_Finals$Activity.Evidence[Dataset_Finals$Activity.Evidence== 'Eruption Observed']
+erup_tectonic_total <-NROW(mydata_chi_total)
+
+erup_others<-erup_tectonic_total-(erup_rift+erup_intraplate+erup_subduction)
+
+tectonic_table<-table(erup_rift,erup_intraplate,erup_subduction,erup_others)
+
+#There are 568 eruptions observed in our sample. 
+#If each of the solution choices had the same frequency, then each solution choice would have a count of (568/4)=142 eruptions observed
+
+
+pchisq(sum(((table(tectonic_table) - 142)^2)/142), df = 4-1, lower.tail = FALSE)
+
+```
+#### Statistics:
+
+p : 3.76653e-30
+
+Confidence interval : No confidence interval for chi-square goodness of fit test
+
+
+
+#### Interpretation:
+
+There is strong evidence (p-value = 3.76653e-30) to suggest that the proportions of volcanic eruptions observed in these regions is not .25. Therefore, we can reject the null hypothesis that the proportions of volcanic eruptions observed in all 4 regions are all equal to .25.
+
+\newpage
+
+
+#### Randomization Approach
+
+```{r}
+# Create our data under the assumption that H_0 is true
+solutions_under_H_0 <- rep(c("R", "I", "S", "O"), 142)
+# Sanity Check
+table(solutions_under_H_0)
+
+num_sims <- 10000
+
+# A vector to store my results
+chisq_stats_under_H0 <- rep(NA, num_sims)
+
+# A loop for completing the simulation
+for(i in 1:num_sims){
+new_samp <- sample(solutions_under_H_0, 568, replace = T)
+chisq_stats_under_H0[i] <- sum(((table(new_samp) - 142)^2)/142)
+}
+
+hist(chisq_stats_under_H0, freq = FALSE,
+main='Dist. of the Chi-Square Statistic Under Null',
+xlab = 'Chi-Square Stat under Null',
+ylab = 'Density')
+abline(v=sum(((table(tectonic_table) - 142)^2)/142), col="red")
+
+# Randomization p_value
+sum(chisq_stats_under_H0 >= sum(((table(tectonic_table) - 142)^2)/142))/num_sims
+```
+#### Interpretation:
+
+The data provides strong evidence(p=0) that the proportions of volcanic eruptions observed in these regions is not .25. Therefore, we can reject the null hypothesis that the proportions of volcanic eruptions observed in all 4 regions are all equal to .25.
+
+\newpage
+
+# DISCUSSION
+
+In this study, statistical tests were done to find answers to five different questions. Based on the nature of the
+question different types of statistical tests were conducted. The conclusion for each of the questions can be
+found below:
+
+In Question 1, a one-sample t-test was done to find out whether the mean elevation of stratovolcanoes is equal
+to 2500 meters or not. This two-tailed test gave strong evidence (p-value=.00000731) to suggest that the true
+mean elevation of stratovolcanoes is different than 2500 meters and hence the null hypothesis was rejected. It
+was further found out that, with 95% confidence, the true mean elevation is between 2202.579 meters and
+2383.061
+
+In Question 2, one sample test of proportions was done to find out whether 50% of volcanic eruptions observed
+around the world occur in South America or not. This one-tailed test gave strong evidence (p-value<2.2e-16)
+the null hypothesis can be rejected. It was further found out that, with 95% confidence, the true proportion
+of eruptions observed in South America is between 0 and 0.148276613
+
+In Question 3, a two-sample test for difference in means was done to find out whether the mean elevation of
+volcanic eruptions in Russia is different from the mean elevation of volcanic eruptions in the United States or
+not. This two-tailed test gave strong evidence (p-value=.3063325) to suggest that the difference in the mean is
+zero and hence the null hypothesis could not be rejected. It was further found out that, with 95% confidence,
+the true difference in the mean elevation of volcanic eruptions in Russia and the United States is between
+-115.2755 meters and 366.7904 meters
+
+In Question 4, a two-sample test for difference in proportions was done to find out whether the proportion of
+the number of eruptions observed in South America greater than that in Indonesia or not. This one-tailed test
+no evidence (p-value = 0.9998) to suggest that the true population proportion of the number of volcanic
+eruptions in South America is greater than the true population proportion of the number of volcanic eruptions
+in Indonesia and hence the null hypothesis could not be rejected. It was further found out that, with 95%
+confidence, the true population proportion difference is between -0.3 and 1
+
+In Question 5, Chi-square goodness of fit test was done to find out if the total number of eruptions observed
+in the Rift Zone / Continental Crust (>25 km), Intraplate / Continental Crust (>25 km), Subduction Zone /
+Continental Crust (>25 km) and others are the same or not. There was strong evidence (p-value = 3.76653e-30)
+to suggest that the proportions of volcanic eruptions observed in these regions are not .25. And hence, the null
+hypothesis was rejected.
+
+Though this analysis provided a detailed inspection of various factors leading to volcanic eruptions and the
+regions that more likely to be prone to eruptions, nevertheless this analysis has certain limitations. Natural
+hazards such as earthquakes and volcanoes can never be calculated or prevented. It is possible to detect
+the signs that signal a volcanic activity or a region that is likely to be affected, but it cannot always be
+predicted. So, a less risk zone can become a volcanic eruption zone by overnight. Those are some factors that
+are confounding. This study can be further extended by conducting a time-series analysis on the dataset, to
+predict more about the pattern of occurrence of volcanoes.
+
+\newpage
+
+# APPENDIX
+
+Dataset source: https://www.kaggle.com/smithsonian/volcanic-eruptions
+
+```{r ref.label=knitr::all_labels(), echo = T, eval = F}
+
+```
